@@ -1,3 +1,5 @@
+import { DrawingData } from '../types';
+
 export type MarkdownBlockType =
   | 'h1'
   | 'h2'
@@ -6,6 +8,7 @@ export type MarkdownBlockType =
   | 'p'
   | 'blockquote'
   | 'codeblock'
+  | 'drawing'
   | 'checklist'
   | 'bullet'
   | 'number'
@@ -20,6 +23,7 @@ export interface MarkdownBlock {
   checked?: boolean;
   codeLang?: string;
   tableRows?: string[][];
+  drawingData?: DrawingData;
   lineIndex: number;
 }
 
@@ -52,7 +56,6 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
     const codeMatch = line.match(/^```(\w*)/);
     if (codeMatch) {
       if (!inCodeBlock) {
-        // flush any table before starting code block
         if (inTable) {
           blocks.push(buildTableBlock(tableBuffer, tableStartLine));
           inTable = false;
@@ -65,11 +68,33 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         continue;
       } else {
         inCodeBlock = false;
+        const codeText = codeBuffer.join('\n');
+
+        // Check if this is an embedded stylus drawing
+        if (codeLang === 'drawing' || codeLang === 'sketch') {
+          try {
+            const parsedData: DrawingData = JSON.parse(codeText);
+            blocks.push({
+              id: `draw_${codeStartLine}`,
+              type: 'drawing',
+              raw: `\`\`\`${codeLang}\n${codeText}\n\`\`\``,
+              text: codeText,
+              codeLang,
+              drawingData: parsedData,
+              lineIndex: codeStartLine,
+            });
+            codeBuffer = [];
+            continue;
+          } catch {
+            // fallback to codeblock if JSON is invalid
+          }
+        }
+
         blocks.push({
           id: `code_${codeStartLine}`,
           type: 'codeblock',
-          raw: codeBuffer.join('\n'),
-          text: codeBuffer.join('\n'),
+          raw: codeText,
+          text: codeText,
           codeLang: codeLang || 'code',
           lineIndex: codeStartLine,
         });
@@ -213,7 +238,6 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
     });
   }
 
-  // Flush trailing buffers
   if (inCodeBlock) {
     blocks.push({
       id: `code_${codeStartLine}`,
@@ -234,7 +258,7 @@ export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
 
 function buildTableBlock(lines: string[], startLine: number): MarkdownBlock {
   const rows = lines
-    .filter((l) => !l.match(/^\s*\|(\s*[-:]+[-|\s:]*)\|\s*$/)) // skip divider row
+    .filter((l) => !l.match(/^\s*\|(\s*[-:]+[-|\s:]*)\|\s*$/))
     .map((l) =>
       l
         .split('|')
@@ -252,26 +276,16 @@ function buildTableBlock(lines: string[], startLine: number): MarkdownBlock {
   };
 }
 
-/**
- * Parse inline formatting (Bold, Italic, Code, Strikethrough, Links)
- */
 export function parseInlineTokens(text: string): InlineToken[] {
   if (!text) return [];
 
   const tokens: InlineToken[] = [];
-  // Regex matches:
-  // 1. `code`
-  // 2. **bold**
-  // 3. *italic*
-  // 4. ~~strike~~
-  // 5. [label](url)
   const regex = /(`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|~~([^~]+)~~|\[([^\]]+)\]\(([^)]+)\))/g;
 
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
   while ((match = regex.exec(text)) !== null) {
-    // plain text before match
     if (match.index > lastIndex) {
       tokens.push({
         type: 'text',
@@ -280,19 +294,14 @@ export function parseInlineTokens(text: string): InlineToken[] {
     }
 
     if (match[2]) {
-      // `code`
       tokens.push({ type: 'code', text: match[2] });
     } else if (match[3]) {
-      // **bold**
       tokens.push({ type: 'bold', text: match[3] });
     } else if (match[4]) {
-      // *italic*
       tokens.push({ type: 'italic', text: match[4] });
     } else if (match[5]) {
-      // ~~strike~~
       tokens.push({ type: 'strike', text: match[5] });
     } else if (match[6] && match[7]) {
-      // [label](url)
       tokens.push({ type: 'link', text: match[6], url: match[7] });
     }
 

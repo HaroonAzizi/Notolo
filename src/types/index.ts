@@ -27,3 +27,15 @@ export interface EditorSelection {
 }
 
 export type ExportFormat = 'markdown' | 'text' | 'pdf';
+
+export interface DrawingPath {
+  d: string;
+  color: string;
+  width: number;
+}
+
+export interface DrawingData {
+  paths: DrawingPath[];
+  width: number;
+  height: number;
+}

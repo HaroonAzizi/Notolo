@@ -14,6 +14,7 @@ import {
 import { useTheme } from '../../theme/ThemeContext';
 import { useVaultStore } from '../../utils/vaultStore';
 import { GoogleDocsToolbar, ToolbarActions } from './GoogleDocsToolbar';
+import { DrawingPadModal } from '../drawing/DrawingPadModal';
 import {
   handleSmartEnter,
   wrapSelection,
@@ -24,7 +25,7 @@ import {
   insertCodeBlockTemplate,
   insertDividerTemplate,
 } from '../../utils/autoFormatter';
-import { EditorSelection } from '../../types';
+import { EditorSelection, DrawingData } from '../../types';
 
 interface Props {
   isTablet: boolean;
@@ -38,9 +39,12 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
   const activeNote = notes.find((n) => n.id === activeNoteId);
   const content = activeNote?.content || '';
 
-  // Use a ref for selection to avoid stale state and unwanted re-renders
   const selectionRef = useRef<EditorSelection>({ start: 0, end: 0 });
   const inputRef = useRef<TextInput>(null);
+
+  // Drawing Pad state
+  const [isDrawingOpen, setIsDrawingOpen] = useState(false);
+  const [editingDrawing, setEditingDrawing] = useState<DrawingData | null>(null);
 
   // Undo / Redo history stacks
   const [history, setHistory] = useState<string[]>([content]);
@@ -90,7 +94,6 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
   };
 
   const handleChangeText = (newText: string) => {
-    // Check if the user pressed Enter (newline added at cursor position)
     if (newText.length === content.length + 1) {
       const cursor = selectionRef.current.start;
       if (newText[cursor] === '\n') {
@@ -123,7 +126,22 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
     }
   };
 
+  const handleSaveDrawing = (drawing: DrawingData) => {
+    const cursor = selectionRef.current.start;
+    const drawingBlock = `\n\n\`\`\`drawing\n${JSON.stringify(drawing)}\n\`\`\`\n\n`;
+    const newText = content.slice(0, cursor) + drawingBlock + content.slice(cursor);
+    const newPos = cursor + drawingBlock.length;
+    applyChange({
+      newText,
+      newSelection: { start: newPos, end: newPos },
+    });
+  };
+
   const toolbarActions: ToolbarActions = {
+    onOpenDrawing: () => {
+      setEditingDrawing(null);
+      setIsDrawingOpen(true);
+    },
     onFormatH1: () => applyChange(toggleLinePrefix(content, selectionRef.current, '# ')),
     onFormatH2: () => applyChange(toggleLinePrefix(content, selectionRef.current, '## ')),
     onFormatH3: () => applyChange(toggleLinePrefix(content, selectionRef.current, '### ')),
@@ -146,7 +164,6 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
     canRedo: historyIndex < history.length - 1,
   };
 
-  // Generous bottom clearance allows infinite scrolling past the bottom of text
   const overscrollBottomPadding = Math.max(height * 0.65, 450);
 
   return (
@@ -178,7 +195,7 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
                 value={content}
                 onChangeText={handleChangeText}
                 onSelectionChange={handleSelectionChange}
-                placeholder="Start typing your thoughts..."
+                placeholder="Start typing your thoughts or sketch with stylus..."
                 placeholderTextColor={theme.textMuted}
                 selectionColor={theme.accent}
                 textAlignVertical="top"
@@ -198,6 +215,14 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
           </TouchableWithoutFeedback>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Stylus Drawing Pad Modal */}
+      <DrawingPadModal
+        visible={isDrawingOpen}
+        onClose={() => setIsDrawingOpen(false)}
+        onSave={handleSaveDrawing}
+        initialData={editingDrawing}
+      />
     </View>
   );
 };

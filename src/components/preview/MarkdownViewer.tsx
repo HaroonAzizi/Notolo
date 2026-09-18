@@ -8,7 +8,8 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
-import { CheckSquare, Square } from 'lucide-react-native';
+import Svg, { Path } from 'react-native-svg';
+import { CheckSquare, Square, PenTool } from 'lucide-react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { useVaultStore } from '../../utils/vaultStore';
 import {
@@ -22,7 +23,7 @@ interface Props {
 }
 
 export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const { theme } = useTheme();
   const { notes, activeNoteId, toggleChecklistInActiveNote } = useVaultStore();
 
@@ -120,6 +121,53 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
             {block.text}
           </Text>
         );
+
+      case 'drawing': {
+        const dData = block.drawingData;
+        if (!dData || !dData.paths || dData.paths.length === 0) return null;
+        const origWidth = dData.width || 600;
+        const origHeight = dData.height || 400;
+        const containerWidth = Math.min(width - (isTablet ? 80 : 40), 780);
+        const scale = containerWidth / origWidth;
+        const containerHeight = origHeight * scale;
+
+        return (
+          <View
+            key={block.id}
+            style={[
+              styles.drawingContainer,
+              {
+                backgroundColor: theme.sheetBg,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <View style={styles.drawingBadge}>
+              <PenTool size={12} color={theme.accent} style={{ marginRight: 4 }} />
+              <Text style={[styles.drawingBadgeText, { color: theme.textMuted }]}>
+                Sketch
+              </Text>
+            </View>
+            <Svg
+              width={containerWidth}
+              height={containerHeight}
+              viewBox={`0 0 ${origWidth} ${origHeight}`}
+            >
+              {dData.paths.map((p, idx) => (
+                <Path
+                  key={idx}
+                  d={p.d}
+                  stroke={p.color}
+                  strokeWidth={p.width}
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ))}
+            </Svg>
+          </View>
+        );
+      }
 
       case 'checklist':
         return (
@@ -381,6 +429,25 @@ const styles = StyleSheet.create({
   },
   blankLine: {
     height: 12,
+  },
+  drawingContainer: {
+    marginVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+    alignSelf: 'center',
+  },
+  drawingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  drawingBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   checkRow: {
     flexDirection: 'row',

@@ -25,6 +25,7 @@ import {
   RotateCw,
   Indent,
   Outdent,
+  PenTool,
 } from 'lucide-react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { hapticFeedback } from '../../utils/haptics';
@@ -44,6 +45,7 @@ export interface ToolbarActions {
   onInsertCodeBlock: () => void;
   onInsertTable: () => void;
   onInsertDivider: () => void;
+  onOpenDrawing?: () => void;
   onIndent?: () => void;
   onOutdent?: () => void;
   onUndo?: () => void;
@@ -82,6 +84,21 @@ export const GoogleDocsToolbar: React.FC<Props> = ({ actions }) => {
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="always"
       >
+        {/* Stylus Drawing Pad button */}
+        {actions.onOpenDrawing && (
+          <TouchableOpacity
+            onPress={() => handleAction(actions.onOpenDrawing)}
+            style={[
+              styles.toolBtn,
+              { backgroundColor: theme.accentSoft, borderRadius: 8 },
+            ]}
+          >
+            <PenTool size={16} color={theme.accent} />
+          </TouchableOpacity>
+        )}
+
+        <View style={[styles.separator, { backgroundColor: theme.border }]} />
+
         {/* Undo / Redo group */}
         {actions.onUndo && (
           <TouchableOpacity
