@@ -23,6 +23,8 @@ import {
   Minus,
   RotateCcw,
   RotateCw,
+  Indent,
+  Outdent,
 } from 'lucide-react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { hapticFeedback } from '../../utils/haptics';
@@ -42,6 +44,8 @@ export interface ToolbarActions {
   onInsertCodeBlock: () => void;
   onInsertTable: () => void;
   onInsertDivider: () => void;
+  onIndent?: () => void;
+  onOutdent?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
@@ -76,6 +80,7 @@ export const GoogleDocsToolbar: React.FC<Props> = ({ actions }) => {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="always"
       >
         {/* Undo / Redo group */}
         {actions.onUndo && (
@@ -182,6 +187,25 @@ export const GoogleDocsToolbar: React.FC<Props> = ({ actions }) => {
         >
           <ListOrdered size={16} color={theme.text} />
         </TouchableOpacity>
+
+        {/* Indent / Outdent */}
+        {actions.onOutdent && (
+          <TouchableOpacity
+            onPress={() => handleAction(actions.onOutdent)}
+            style={styles.toolBtn}
+          >
+            <Outdent size={16} color={theme.text} />
+          </TouchableOpacity>
+        )}
+
+        {actions.onIndent && (
+          <TouchableOpacity
+            onPress={() => handleAction(actions.onIndent)}
+            style={styles.toolBtn}
+          >
+            <Indent size={16} color={theme.text} />
+          </TouchableOpacity>
+        )}
 
         <View style={[styles.separator, { backgroundColor: theme.border }]} />
 

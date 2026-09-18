@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
+  KeyboardAvoidingView,
   NativeSyntheticEvent,
   TextInputSelectionChangeEventData,
-  TextInputKeyPressEventData,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { useVaultStore } from '../../utils/vaultStore';
@@ -16,6 +16,8 @@ import {
   handleSmartEnter,
   wrapSelection,
   toggleLinePrefix,
+  indentLines,
+  outdentLines,
   insertMarkdownTable,
   insertCodeBlockTemplate,
   insertDividerTemplate,
@@ -41,7 +43,6 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
   const [historyIndex, setHistoryIndex] = useState(0);
   const isInternalChangeRef = useRef(false);
 
-  // Sync content with history when note changes
   useEffect(() => {
     if (!isInternalChangeRef.current) {
       setHistory([content]);
@@ -83,25 +84,27 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
     setSelection(e.nativeEvent.selection);
   };
 
-  // Intercept Enter key for auto-continuation
-  const handleKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
-    if (e.nativeEvent.key === 'Enter') {
-      const result = handleSmartEnter(content, selection);
-      if (result.handled) {
-        pushHistory(result.newText);
-        setTimeout(() => {
-          inputRef.current?.setNativeProps({
-            selection: result.newSelection,
-          });
-          setSelection(result.newSelection);
-        }, 10);
+  // Unified text change handler that supports both physical and software keyboards
+  const handleChangeText = (newText: string) => {
+    // Check if the user just pressed Enter (inserted a newline)
+    if (newText.length === content.length + 1) {
+      const cursor = selection.start;
+      if (newText[cursor] === '\n') {
+        const result = handleSmartEnter(content, selection);
+        if (result.handled) {
+          pushHistory(result.newText);
+          setTimeout(() => {
+            inputRef.current?.setNativeProps({
+              selection: result.newSelection,
+            });
+            setSelection(result.newSelection);
+          }, 10);
+          return;
+        }
       }
     }
-  };
 
-  // Text changes
-  const handleChangeText = (text: string) => {
-    pushHistory(text);
+    pushHistory(newText);
   };
 
   // Formatting actions
@@ -128,6 +131,8 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
     onFormatNumber: () => applyChange(toggleLinePrefix(content, selection, '1. ')),
     onFormatChecklist: () => applyChange(toggleLinePrefix(content, selection, '- [ ] ')),
     onFormatQuote: () => applyChange(toggleLinePrefix(content, selection, '> ')),
+    onIndent: () => applyChange(indentLines(content, selection)),
+    onOutdent: () => applyChange(outdentLines(content, selection)),
     onInsertCodeBlock: () => applyChange(insertCodeBlockTemplate(content, selection)),
     onInsertTable: () => applyChange(insertMarkdownTable(content, selection)),
     onInsertDivider: () => applyChange(insertDividerTemplate(content, selection)),
@@ -138,10 +143,11 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Top Google Docs Formatting Toolbar */}
-      <GoogleDocsToolbar actions={toolbarActions} />
-
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: theme.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 70 : 0}
+    >
       {/* Centered Document Sheet Canvas */}
       <ScrollView
         contentContainerStyle={[
@@ -150,6 +156,7 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
         ]}
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
       >
         <View
           style={[
@@ -168,12 +175,13 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
             value={content}
             onChangeText={handleChangeText}
             onSelectionChange={handleSelectionChange}
-            onKeyPress={handleKeyPress}
             placeholder="Start typing your thoughts..."
             placeholderTextColor={theme.textMuted}
             selectionColor={theme.accent}
             textAlignVertical="top"
             scrollEnabled={false}
+            autoCapitalize="sentences"
+            autoCorrect={true}
             style={[
               styles.input,
               {
@@ -184,7 +192,10 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
           />
         </View>
       </ScrollView>
-    </View>
+
+      {/* Docked Google Docs Formatting Toolbar above Keyboard */}
+      <GoogleDocsToolbar actions={toolbarActions} />
+    </KeyboardAvoidingView>
   );
 };
 
@@ -195,11 +206,13 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: 12,
+    paddingBottom: 40,
     alignItems: 'center',
   },
   tabletScrollContent: {
-    paddingVertical: 24,
-    paddingHorizontal: 32,
+    paddingVertical: 20,
+    paddingHorizontal: 28,
+    paddingBottom: 60,
   },
   documentSheet: {
     width: '100%',
@@ -208,13 +221,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 20,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
+    shadowOpacity: 0.15,
+    shadowRadius: 14,
+    elevation: 3,
   },
   tabletDocumentSheet: {
     maxWidth: 780,
-    padding: 36,
+    padding: 34,
     borderRadius: 16,
   },
   input: {

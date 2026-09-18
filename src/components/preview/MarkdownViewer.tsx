@@ -28,6 +28,12 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
   const content = activeNote?.content || '';
   const blocks = parseMarkdownBlocks(content);
 
+  const getIndentLevel = (raw: string): number => {
+    const match = raw.match(/^(\s*)/);
+    const spaces = match ? match[1].length : 0;
+    return Math.min(Math.floor(spaces / 2), 4);
+  };
+
   const renderInline = (text: string) => {
     const tokens = parseInlineTokens(text);
     return (
@@ -85,6 +91,9 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
   };
 
   const renderBlock = (block: MarkdownBlock) => {
+    const indentLevel = getIndentLevel(block.raw);
+    const indentMargin = indentLevel * 18;
+
     switch (block.type) {
       case 'h1':
         return (
@@ -116,7 +125,7 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
             key={block.id}
             activeOpacity={0.7}
             onPress={() => toggleChecklistInActiveNote(block.lineIndex)}
-            style={styles.checkRow}
+            style={[styles.checkRow, { marginLeft: 6 + indentMargin }]}
           >
             {block.checked ? (
               <CheckSquare size={18} color={theme.accent} style={styles.checkIcon} />
@@ -137,7 +146,10 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
 
       case 'bullet':
         return (
-          <View key={block.id} style={styles.listRow}>
+          <View
+            key={block.id}
+            style={[styles.listRow, { marginLeft: 10 + indentMargin }]}
+          >
             <View style={[styles.bulletDot, { backgroundColor: theme.accent }]} />
             <Text style={[styles.listText, { color: theme.text }]}>
               {renderInline(block.text)}
@@ -147,7 +159,10 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
 
       case 'number':
         return (
-          <View key={block.id} style={styles.listRow}>
+          <View
+            key={block.id}
+            style={[styles.listRow, { marginLeft: 10 + indentMargin }]}
+          >
             <Text style={[styles.numberPrefix, { color: theme.accent }]}>
               {block.raw.match(/^\s*(\d+\.)/)?.[1] || '•'}
             </Text>
@@ -188,7 +203,7 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
             ]}
           >
             {block.codeLang ? (
-              <Text style={[styles.codeLang, { color: theme.textMuted }]}>
+              <Text style={[styles.codeLang, { color: theme.accent }]}>
                 {block.codeLang.toUpperCase()}
               </Text>
             ) : null}
@@ -267,7 +282,6 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
         );
 
       default:
-        // Paragraph / Blank line
         if (!block.text.trim()) {
           return <View key={block.id} style={styles.blankLine} />;
         }
@@ -321,13 +335,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 20,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
+    shadowOpacity: 0.15,
+    shadowRadius: 14,
+    elevation: 3,
   },
   tabletDocumentSheet: {
     maxWidth: 780,
-    padding: 36,
+    padding: 34,
     borderRadius: 16,
   },
   inlineBase: {
@@ -369,13 +383,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     letterSpacing: -0.3,
-    marginTop: 16,
+    marginTop: 18,
     marginBottom: 8,
   },
   h3: {
     fontSize: 17,
     fontWeight: '600',
-    marginTop: 12,
+    marginTop: 14,
     marginBottom: 6,
   },
   paragraphContainer: {
@@ -401,7 +415,7 @@ const styles = StyleSheet.create({
   listRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginVertical: 4,
+    marginVertical: 5,
   },
   bulletDot: {
     width: 6,
@@ -423,11 +437,12 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   blockquote: {
-    borderLeftWidth: 4,
+    borderLeftWidth: 3.5,
     paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     borderRadius: 4,
-    marginVertical: 12,
+    marginVertical: 14,
+    marginLeft: 4,
   },
   blockquoteText: {
     fontSize: 15,
@@ -442,8 +457,8 @@ const styles = StyleSheet.create({
   },
   codeLang: {
     fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontWeight: '800',
+    letterSpacing: 0.6,
     marginBottom: 8,
   },
   codeText: {

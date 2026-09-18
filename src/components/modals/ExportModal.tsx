@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { FileDown, FileText, Printer, X, Check } from 'lucide-react-native';
+import { FileDown, FileText, Printer, X } from 'lucide-react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { Note } from '../../types';
 import { exportAsMarkdown, exportAsPlainText, exportAsPdf } from '../../utils/exportHelper';
@@ -154,7 +154,7 @@ export const ExportModal: React.FC<Props> = ({ visible, onClose, note }) => {
                   <View
                     style={[
                       styles.iconBox,
-                      { backgroundColor: 'rgba(239, 68, 68, 0.12)' },
+                      { backgroundColor: theme.dangerSoft },
                     ]}
                   >
                     <Printer size={20} color={theme.danger} />
@@ -171,6 +171,16 @@ export const ExportModal: React.FC<Props> = ({ visible, onClose, note }) => {
                   </View>
                 </TouchableOpacity>
               </View>
+
+              {/* code.af subtle footer */}
+              <View style={styles.footerRow}>
+                <Text style={[styles.footerCredit, { color: theme.textMuted }]}>
+                  crafted with precision by{' '}
+                  <Text style={{ color: theme.accent, fontWeight: '700' }}>
+                    code.af
+                  </Text>
+                </Text>
+              </View>
             </View>
           </TouchableWithoutFeedback>
         </View>
@@ -182,7 +192,7 @@ export const ExportModal: React.FC<Props> = ({ visible, onClose, note }) => {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -195,7 +205,7 @@ const styles = StyleSheet.create({
     padding: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 8,
   },
@@ -247,5 +257,13 @@ const styles = StyleSheet.create({
   optionDescription: {
     fontSize: 12,
     lineHeight: 16,
+  },
+  footerRow: {
+    marginTop: 18,
+    alignItems: 'center',
+  },
+  footerCredit: {
+    fontSize: 11,
+    letterSpacing: 0.2,
   },
 });

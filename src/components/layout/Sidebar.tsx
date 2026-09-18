@@ -21,7 +21,6 @@ import {
 import { useVaultStore } from '../../utils/vaultStore';
 import { useTheme } from '../../theme/ThemeContext';
 import { NoteListItem } from './NoteListItem';
-import { Folder } from '../../types';
 
 const FOLDER_ICONS: Record<string, any> = {
   all: BookOpen,
@@ -67,7 +66,6 @@ export const Sidebar: React.FC<Props> = ({ onCloseMobileDrawer, isTablet }) => {
     );
   });
 
-  // Sort pinned notes to the top, then by most recently updated
   const sortedNotes = [...filteredNotes].sort((a, b) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
@@ -118,7 +116,7 @@ export const Sidebar: React.FC<Props> = ({ onCloseMobileDrawer, isTablet }) => {
           style={[styles.newNoteBtn, { backgroundColor: theme.accent }]}
           activeOpacity={0.8}
         >
-          <Plus size={18} color="#FFFFFF" />
+          <Plus size={18} color="#071015" strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
 
@@ -239,6 +237,25 @@ export const Sidebar: React.FC<Props> = ({ onCloseMobileDrawer, isTablet }) => {
           />
         )}
       />
+
+      {/* Subtle code.af Branding Footer */}
+      <View
+        style={[
+          styles.brandingFooter,
+          {
+            borderTopColor: theme.borderSubtle,
+            backgroundColor: theme.sidebarBg,
+          },
+        ]}
+      >
+        <View style={[styles.brandingDot, { backgroundColor: theme.accent }]} />
+        <Text style={[styles.brandingText, { color: theme.textMuted }]}>
+          developed by{' '}
+          <Text style={[styles.brandingHighlight, { color: theme.accent }]}>
+            code.af
+          </Text>
+        </Text>
+      </View>
     </View>
   );
 };
@@ -282,10 +299,10 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6366F1',
+    shadowColor: '#00E5BC',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
     elevation: 3,
   },
   searchContainer: {
@@ -344,7 +361,7 @@ const styles = StyleSheet.create({
   },
   notesListContent: {
     paddingHorizontal: 12,
-    paddingBottom: 24,
+    paddingBottom: 12,
   },
   emptyContainer: {
     paddingTop: 40,
@@ -353,5 +370,25 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 13,
     fontStyle: 'italic',
+  },
+  brandingFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+  },
+  brandingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  brandingText: {
+    fontSize: 11,
+    letterSpacing: 0.3,
+  },
+  brandingHighlight: {
+    fontWeight: '700',
   },
 });

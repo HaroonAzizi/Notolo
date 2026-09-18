@@ -3,12 +3,10 @@ import {
   StyleSheet,
   View,
   useWindowDimensions,
-  SafeAreaView,
   StatusBar,
   Modal,
-  Platform,
 } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { useVaultStore } from './src/utils/vaultStore';
 import { AppHeader } from './src/components/layout/AppHeader';
@@ -45,6 +43,7 @@ function MainApp() {
         styles.safeArea,
         { backgroundColor: theme.sidebarBg },
       ]}
+      edges={['top', 'left', 'right']}
     >
       <StatusBar
         barStyle={theme.isDark ? 'light-content' : 'dark-content'}
@@ -110,7 +109,6 @@ function MainApp() {
           )}
 
           {viewMode === 'split' && !isTablet && (
-            // Mobile fallback if split selected: show editor
             <SmartEditor isTablet={false} />
           )}
         </View>

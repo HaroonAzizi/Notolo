@@ -25,7 +25,7 @@ export function handleSmartEnter(
   const lastNewlineIndex = textBeforeCursor.lastIndexOf('\n');
   const currentLine = textBeforeCursor.slice(lastNewlineIndex + 1);
 
-  // Check empty checklist
+  // Check empty checklist: e.g. "  - [ ] " -> clears and exits
   const emptyChecklistMatch = currentLine.match(/^(\s*)-\s*\[([ xX])?\]\s*$/);
   if (emptyChecklistMatch) {
     const lineStart = lastNewlineIndex + 1;
@@ -37,7 +37,7 @@ export function handleSmartEnter(
     };
   }
 
-  // Check active checklist with text
+  // Check active checklist with text: preserve indentation
   const activeChecklistMatch = currentLine.match(/^(\s*)-\s*\[([ xX])?\]\s+(.+)$/);
   if (activeChecklistMatch) {
     const indent = activeChecklistMatch[1];
@@ -51,7 +51,7 @@ export function handleSmartEnter(
     };
   }
 
-  // Check empty bullet list
+  // Check empty bullet list: e.g. "  - " -> clears and exits
   const emptyBulletMatch = currentLine.match(/^(\s*)([-*+])\s*$/);
   if (emptyBulletMatch) {
     const lineStart = lastNewlineIndex + 1;
@@ -63,7 +63,7 @@ export function handleSmartEnter(
     };
   }
 
-  // Check active bullet list
+  // Check active bullet list: preserve indentation
   const activeBulletMatch = currentLine.match(/^(\s*)([-*+])\s+(.+)$/);
   if (activeBulletMatch) {
     const indent = activeBulletMatch[1];
@@ -78,7 +78,7 @@ export function handleSmartEnter(
     };
   }
 
-  // Check empty numbered list
+  // Check empty numbered list: e.g. "  1. " -> clears and exits
   const emptyNumberMatch = currentLine.match(/^(\s*)(\d+)\.\s*$/);
   if (emptyNumberMatch) {
     const lineStart = lastNewlineIndex + 1;
@@ -90,7 +90,7 @@ export function handleSmartEnter(
     };
   }
 
-  // Check active numbered list
+  // Check active numbered list: increment number and preserve indentation
   const activeNumberMatch = currentLine.match(/^(\s*)(\d+)\.\s+(.+)$/);
   if (activeNumberMatch) {
     const indent = activeNumberMatch[1];
@@ -139,6 +139,60 @@ export function handleSmartEnter(
 }
 
 /**
+ * Indent current line or selection (adds 2 spaces)
+ */
+export function indentLines(
+  text: string,
+  selection: EditorSelection
+): FormattedChangeResult {
+  const cursor = selection.start;
+  const lastNewline = text.lastIndexOf('\n', Math.max(0, cursor - 1));
+  const lineStart = lastNewline === -1 ? 0 : lastNewline + 1;
+
+  const newText = text.slice(0, lineStart) + '  ' + text.slice(lineStart);
+  const newPos = cursor + 2;
+
+  return {
+    newText,
+    newSelection: { start: newPos, end: newPos },
+    handled: true,
+  };
+}
+
+/**
+ * Outdent current line or selection (removes up to 2 spaces)
+ */
+export function outdentLines(
+  text: string,
+  selection: EditorSelection
+): FormattedChangeResult {
+  const cursor = selection.start;
+  const lastNewline = text.lastIndexOf('\n', Math.max(0, cursor - 1));
+  const lineStart = lastNewline === -1 ? 0 : lastNewline + 1;
+
+  const line = text.slice(lineStart);
+  let spacesToRemove = 0;
+  if (line.startsWith('  ')) {
+    spacesToRemove = 2;
+  } else if (line.startsWith(' ')) {
+    spacesToRemove = 1;
+  }
+
+  if (spacesToRemove === 0) {
+    return { newText: text, newSelection: selection, handled: false };
+  }
+
+  const newText = text.slice(0, lineStart) + line.slice(spacesToRemove);
+  const newPos = Math.max(lineStart, cursor - spacesToRemove);
+
+  return {
+    newText,
+    newSelection: { start: newPos, end: newPos },
+    handled: true,
+  };
+}
+
+/**
  * Wrap selection with markdown symbols (e.g. **bold**, *italic*, `code`, ~~strikethrough~~)
  */
 export function wrapSelection(
@@ -152,15 +206,11 @@ export function wrapSelection(
   const end = Math.max(selection.start, selection.end);
 
   if (start !== end) {
-    // Text is selected
     const selectedText = text.slice(start, end);
-
-    // Check if already wrapped
     const before = text.slice(Math.max(0, start - prefix.length), start);
     const after = text.slice(end, end + suffix.length);
 
     if (before === prefix && after === suffix) {
-      // Unwrap
       const unwrapStart = start - prefix.length;
       const unwrapEnd = end + suffix.length;
       const newText = text.slice(0, unwrapStart) + selectedText + text.slice(unwrapEnd);
@@ -180,7 +230,6 @@ export function wrapSelection(
       handled: true,
     };
   } else {
-    // No text selected, insert placeholder wrapped
     const newText = text.slice(0, start) + prefix + placeholder + suffix + text.slice(start);
     const newStart = start + prefix.length;
     const newEnd = newStart + placeholder.length;
@@ -209,7 +258,7 @@ export function toggleLinePrefix(
 
   const line = text.slice(lineStart, lineEnd);
 
-  // If already starts with prefix, remove it
+  // If line already starts with prefix, toggle it off
   if (line.startsWith(prefix)) {
     const updatedLine = line.slice(prefix.length);
     const newText = text.slice(0, lineStart) + updatedLine + text.slice(lineEnd);
@@ -222,12 +271,10 @@ export function toggleLinePrefix(
     };
   }
 
-  // Remove existing heading/list prefix if present
   let cleanLine = line;
   if (regexToReplace) {
     cleanLine = line.replace(regexToReplace, '');
   } else {
-    // Default strip other prefixes
     cleanLine = line.replace(/^(#{1,6}\s+|-\s*\[([ xX])?\]\s+|[-*+]\s+|\d+\.\s+|>\s+)/, '');
   }
 
@@ -243,9 +290,6 @@ export function toggleLinePrefix(
   };
 }
 
-/**
- * Insert markdown table template
- */
 export function insertMarkdownTable(
   text: string,
   selection: EditorSelection
@@ -262,9 +306,6 @@ export function insertMarkdownTable(
   };
 }
 
-/**
- * Insert code block
- */
 export function insertCodeBlockTemplate(
   text: string,
   selection: EditorSelection
@@ -282,9 +323,6 @@ export function insertCodeBlockTemplate(
   };
 }
 
-/**
- * Insert Horizontal Divider
- */
 export function insertDividerTemplate(
   text: string,
   selection: EditorSelection

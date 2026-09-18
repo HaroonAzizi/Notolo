@@ -163,7 +163,7 @@ export async function exportAsPdf(note: Note): Promise<boolean> {
       <body>
         ${formatMarkdownForHtml(note.content)}
         <div class="footer">
-          Generated with Notolo • ${new Date().toLocaleDateString()}
+          Generated with Notolo • developed by code.af • ${new Date().toLocaleDateString()}
         </div>
       </body>
       </html>
