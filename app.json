@@ -18,14 +18,17 @@
       "infoPlist": {
         "UIRequiresFullScreen": false,
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "3"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#071015",
         "foregroundImage": "./assets/icon.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "versionCode": 3,
+      "package": "af.code.notolo"
     },
     "web": {
       "favicon": "./assets/favicon.png"
