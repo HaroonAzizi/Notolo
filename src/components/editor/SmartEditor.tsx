@@ -143,31 +143,24 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 70 : 0}
-    >
-      {/* Centered Document Sheet Canvas */}
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          isTablet && styles.tabletScrollContent,
-        ]}
-        showsVerticalScrollIndicator={false}
-        keyboardDismissMode="interactive"
-        keyboardShouldPersistTaps="handled"
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Top Google Docs Formatting Toolbar Ribbon */}
+      <GoogleDocsToolbar actions={toolbarActions} />
+
+      {/* Seamless Edge-to-Edge Document Canvas */}
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
       >
-        <View
-          style={[
-            styles.documentSheet,
-            {
-              backgroundColor: theme.sheetBg,
-              borderColor: theme.borderSubtle,
-              shadowColor: theme.shadowColor,
-            },
-            isTablet && styles.tabletDocumentSheet,
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            isTablet && styles.tabletScrollContent,
           ]}
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
         >
           <TextInput
             ref={inputRef}
@@ -190,12 +183,9 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
               },
             ]}
           />
-        </View>
-      </ScrollView>
-
-      {/* Docked Google Docs Formatting Toolbar above Keyboard */}
-      <GoogleDocsToolbar actions={toolbarActions} />
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -203,37 +193,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  keyboardContainer: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
-    padding: 12,
-    paddingBottom: 40,
-    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 80,
   },
   tabletScrollContent: {
-    paddingVertical: 20,
-    paddingHorizontal: 28,
-    paddingBottom: 60,
-  },
-  documentSheet: {
+    paddingHorizontal: 40,
+    paddingTop: 24,
+    paddingBottom: 100,
+    alignSelf: 'center',
     width: '100%',
-    minHeight: '100%',
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 20,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 14,
-    elevation: 3,
-  },
-  tabletDocumentSheet: {
-    maxWidth: 780,
-    padding: 34,
-    borderRadius: 16,
+    maxWidth: 820,
   },
   input: {
     fontSize: 16,
     lineHeight: 26,
     padding: 0,
-    minHeight: 500,
+    minHeight: 600,
   },
 });

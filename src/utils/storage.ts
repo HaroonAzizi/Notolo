@@ -7,7 +7,7 @@ const ACTIVE_NOTE_KEY = '@notolo_active_note_id';
 
 const WELCOME_NOTE_CONTENT = `# Welcome to Notolo 🖋️
 
-**Notolo** is an ultra-fast, minimalist note-taking app blending the best of **Obsidian** (local-first Markdown vault, folder & tag organization, fast search) with **Google Docs** (effortless formatting ribbon, document canvas, auto-formatting).
+**Notolo** is an ultra-fast, minimalist note-taking app featuring a local-first Markdown vault, clean formatting ribbon, document canvas, and smart auto-formatting.
 
 ---
 
@@ -37,8 +37,8 @@ const WELCOME_NOTE_CONTENT = `# Welcome to Notolo 🖋️
 \`\`\`typescript
 interface Note {
   title: string;
-  isObsidianFast: true;
-  isGoogleDocsClean: true;
+  isSuperFast: true;
+  isCleanAndMinimal: true;
 }
 \`\`\`
 

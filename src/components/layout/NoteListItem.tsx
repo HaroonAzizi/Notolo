@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Pin, FileText } from 'lucide-react-native';
+import { Pin } from 'lucide-react-native';
 import { Note } from '../../types';
 import { useTheme } from '../../theme/ThemeContext';
 
@@ -15,7 +15,6 @@ export const NoteListItem: React.FC<Props> = ({
   note,
   isActive,
   onSelect,
-  onTogglePin,
 }) => {
   const { theme } = useTheme();
 
@@ -28,10 +27,12 @@ export const NoteListItem: React.FC<Props> = ({
     .trim()
     .slice(0, 75);
 
-  const formattedDate = new Date(note.updatedAt).toLocaleDateString(undefined, {
+  // Force Gregorian date formatting
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
-  });
+    calendar: 'gregory',
+  }).format(new Date(note.updatedAt));
 
   return (
     <TouchableOpacity

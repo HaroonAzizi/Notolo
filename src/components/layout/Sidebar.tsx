@@ -103,12 +103,7 @@ export const Sidebar: React.FC<Props> = ({ onCloseMobileDrawer, isTablet }) => {
             source={require('../../../assets/icon.png')}
             style={styles.brandLogo}
           />
-          <View>
-            <Text style={[styles.brandTitle, { color: theme.text }]}>Notolo</Text>
-            <Text style={[styles.brandSubtitle, { color: theme.textMuted }]}>
-              Obsidian & Docs
-            </Text>
-          </View>
+          <Text style={[styles.brandTitle, { color: theme.text }]}>Notolo</Text>
         </View>
 
         <TouchableOpacity
@@ -147,7 +142,7 @@ export const Sidebar: React.FC<Props> = ({ onCloseMobileDrawer, isTablet }) => {
         )}
       </View>
 
-      {/* Folders horizontal or pill list */}
+      {/* Folders horizontal list */}
       <View style={styles.foldersSection}>
         <FlatList
           horizontal
@@ -284,14 +279,9 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   brandTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
     letterSpacing: -0.4,
-  },
-  brandSubtitle: {
-    fontSize: 11,
-    fontWeight: '500',
-    letterSpacing: 0.2,
   },
   newNoteBtn: {
     width: 34,

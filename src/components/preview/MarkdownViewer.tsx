@@ -125,7 +125,7 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
             key={block.id}
             activeOpacity={0.7}
             onPress={() => toggleChecklistInActiveNote(block.lineIndex)}
-            style={[styles.checkRow, { marginLeft: 6 + indentMargin }]}
+            style={[styles.checkRow, { marginLeft: 4 + indentMargin }]}
           >
             {block.checked ? (
               <CheckSquare size={18} color={theme.accent} style={styles.checkIcon} />
@@ -148,7 +148,7 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
         return (
           <View
             key={block.id}
-            style={[styles.listRow, { marginLeft: 10 + indentMargin }]}
+            style={[styles.listRow, { marginLeft: 6 + indentMargin }]}
           >
             <View style={[styles.bulletDot, { backgroundColor: theme.accent }]} />
             <Text style={[styles.listText, { color: theme.text }]}>
@@ -161,7 +161,7 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
         return (
           <View
             key={block.id}
-            style={[styles.listRow, { marginLeft: 10 + indentMargin }]}
+            style={[styles.listRow, { marginLeft: 6 + indentMargin }]}
           >
             <Text style={[styles.numberPrefix, { color: theme.accent }]}>
               {block.raw.match(/^\s*(\d+\.)/)?.[1] || '•'}
@@ -295,54 +295,35 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
 
   return (
     <ScrollView
+      style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={[
         styles.scrollContent,
         isTablet && styles.tabletScrollContent,
       ]}
       showsVerticalScrollIndicator={false}
     >
-      <View
-        style={[
-          styles.documentSheet,
-          {
-            backgroundColor: theme.sheetBg,
-            borderColor: theme.borderSubtle,
-            shadowColor: theme.shadowColor,
-          },
-          isTablet && styles.tabletDocumentSheet,
-        ]}
-      >
-        {blocks.map(renderBlock)}
-      </View>
+      {blocks.map(renderBlock)}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
-    padding: 12,
-    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 80,
   },
   tabletScrollContent: {
-    paddingVertical: 24,
-    paddingHorizontal: 32,
-  },
-  documentSheet: {
+    paddingHorizontal: 40,
+    paddingTop: 24,
+    paddingBottom: 100,
+    alignSelf: 'center',
     width: '100%',
-    minHeight: '100%',
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 20,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 14,
-    elevation: 3,
-  },
-  tabletDocumentSheet: {
-    maxWidth: 780,
-    padding: 34,
-    borderRadius: 16,
+    maxWidth: 820,
   },
   inlineBase: {
     fontSize: 16,
