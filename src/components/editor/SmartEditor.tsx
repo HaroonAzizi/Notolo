@@ -35,7 +35,8 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
   const activeNote = notes.find((n) => n.id === activeNoteId);
   const content = activeNote?.content || '';
 
-  const [selection, setSelection] = useState<EditorSelection>({ start: 0, end: 0 });
+  // Use a ref for selection to avoid stale state and unwanted re-renders
+  const selectionRef = useRef<EditorSelection>({ start: 0, end: 0 });
   const inputRef = useRef<TextInput>(null);
 
   // Undo / Redo history stacks
@@ -47,6 +48,7 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
     if (!isInternalChangeRef.current) {
       setHistory([content]);
       setHistoryIndex(0);
+      selectionRef.current = { start: content.length, end: content.length };
     }
     isInternalChangeRef.current = false;
   }, [activeNoteId]);
@@ -81,24 +83,21 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
   const handleSelectionChange = (
     e: NativeSyntheticEvent<TextInputSelectionChangeEventData>
   ) => {
-    setSelection(e.nativeEvent.selection);
+    selectionRef.current = e.nativeEvent.selection;
   };
 
-  // Unified text change handler that supports both physical and software keyboards
+  // Text change handler:
+  // - Handles smart list continuation when Enter is pressed
+  // - Does NOT force setNativeProps on standard typing/autocorrect (prevents unwanted highlighting)
   const handleChangeText = (newText: string) => {
-    // Check if the user just pressed Enter (inserted a newline)
+    // Check if the user pressed Enter (newline added at cursor position)
     if (newText.length === content.length + 1) {
-      const cursor = selection.start;
+      const cursor = selectionRef.current.start;
       if (newText[cursor] === '\n') {
-        const result = handleSmartEnter(content, selection);
+        const result = handleSmartEnter(content, selectionRef.current);
         if (result.handled) {
           pushHistory(result.newText);
-          setTimeout(() => {
-            inputRef.current?.setNativeProps({
-              selection: result.newSelection,
-            });
-            setSelection(result.newSelection);
-          }, 10);
+          selectionRef.current = result.newSelection;
           return;
         }
       }
@@ -107,35 +106,36 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
     pushHistory(newText);
   };
 
-  // Formatting actions
+  // Toolbar actions: only explicitly set cursor when user taps a formatting tool
   const applyChange = (result: { newText: string; newSelection: EditorSelection }) => {
     pushHistory(result.newText);
+    selectionRef.current = result.newSelection;
+    // Set selection for toolbar action
     setTimeout(() => {
       inputRef.current?.focus();
       inputRef.current?.setNativeProps({
         selection: result.newSelection,
       });
-      setSelection(result.newSelection);
-    }, 10);
+    }, 15);
   };
 
   const toolbarActions: ToolbarActions = {
-    onFormatH1: () => applyChange(toggleLinePrefix(content, selection, '# ')),
-    onFormatH2: () => applyChange(toggleLinePrefix(content, selection, '## ')),
-    onFormatH3: () => applyChange(toggleLinePrefix(content, selection, '### ')),
-    onFormatBold: () => applyChange(wrapSelection(content, selection, '**')),
-    onFormatItalic: () => applyChange(wrapSelection(content, selection, '*')),
-    onFormatStrike: () => applyChange(wrapSelection(content, selection, '~~')),
-    onFormatCode: () => applyChange(wrapSelection(content, selection, '`')),
-    onFormatBullet: () => applyChange(toggleLinePrefix(content, selection, '- ')),
-    onFormatNumber: () => applyChange(toggleLinePrefix(content, selection, '1. ')),
-    onFormatChecklist: () => applyChange(toggleLinePrefix(content, selection, '- [ ] ')),
-    onFormatQuote: () => applyChange(toggleLinePrefix(content, selection, '> ')),
-    onIndent: () => applyChange(indentLines(content, selection)),
-    onOutdent: () => applyChange(outdentLines(content, selection)),
-    onInsertCodeBlock: () => applyChange(insertCodeBlockTemplate(content, selection)),
-    onInsertTable: () => applyChange(insertMarkdownTable(content, selection)),
-    onInsertDivider: () => applyChange(insertDividerTemplate(content, selection)),
+    onFormatH1: () => applyChange(toggleLinePrefix(content, selectionRef.current, '# ')),
+    onFormatH2: () => applyChange(toggleLinePrefix(content, selectionRef.current, '## ')),
+    onFormatH3: () => applyChange(toggleLinePrefix(content, selectionRef.current, '### ')),
+    onFormatBold: () => applyChange(wrapSelection(content, selectionRef.current, '**')),
+    onFormatItalic: () => applyChange(wrapSelection(content, selectionRef.current, '*')),
+    onFormatStrike: () => applyChange(wrapSelection(content, selectionRef.current, '~~')),
+    onFormatCode: () => applyChange(wrapSelection(content, selectionRef.current, '`')),
+    onFormatBullet: () => applyChange(toggleLinePrefix(content, selectionRef.current, '- ')),
+    onFormatNumber: () => applyChange(toggleLinePrefix(content, selectionRef.current, '1. ')),
+    onFormatChecklist: () => applyChange(toggleLinePrefix(content, selectionRef.current, '- [ ] ')),
+    onFormatQuote: () => applyChange(toggleLinePrefix(content, selectionRef.current, '> ')),
+    onIndent: () => applyChange(indentLines(content, selectionRef.current)),
+    onOutdent: () => applyChange(outdentLines(content, selectionRef.current)),
+    onInsertCodeBlock: () => applyChange(insertCodeBlockTemplate(content, selectionRef.current)),
+    onInsertTable: () => applyChange(insertMarkdownTable(content, selectionRef.current)),
+    onInsertDivider: () => applyChange(insertDividerTemplate(content, selectionRef.current)),
     onUndo: handleUndo,
     onRedo: handleRedo,
     canUndo: historyIndex > 0,

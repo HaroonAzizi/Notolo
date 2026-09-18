@@ -194,13 +194,13 @@ export function outdentLines(
 
 /**
  * Wrap selection with markdown symbols (e.g. **bold**, *italic*, `code`, ~~strikethrough~~)
+ * When nothing is selected, places cursor inside WITHOUT highlighting any text.
  */
 export function wrapSelection(
   text: string,
   selection: EditorSelection,
   prefix: string,
-  suffix: string = prefix,
-  placeholder: string = 'text'
+  suffix: string = prefix
 ): FormattedChangeResult {
   const start = Math.min(selection.start, selection.end);
   const end = Math.max(selection.start, selection.end);
@@ -211,6 +211,7 @@ export function wrapSelection(
     const after = text.slice(end, end + suffix.length);
 
     if (before === prefix && after === suffix) {
+      // Unwrap
       const unwrapStart = start - prefix.length;
       const unwrapEnd = end + suffix.length;
       const newText = text.slice(0, unwrapStart) + selectedText + text.slice(unwrapEnd);
@@ -230,12 +231,13 @@ export function wrapSelection(
       handled: true,
     };
   } else {
-    const newText = text.slice(0, start) + prefix + placeholder + suffix + text.slice(start);
-    const newStart = start + prefix.length;
-    const newEnd = newStart + placeholder.length;
+    // No text selected: insert prefix and suffix with cursor collapsed inside (no highlight)
+    const insertion = prefix + suffix;
+    const newText = text.slice(0, start) + insertion + text.slice(start);
+    const newPos = start + prefix.length;
     return {
       newText,
-      newSelection: { start: newStart, end: newEnd },
+      newSelection: { start: newPos, end: newPos },
       handled: true,
     };
   }

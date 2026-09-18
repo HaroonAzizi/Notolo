@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import {
   PanelLeft,
@@ -16,6 +18,8 @@ import {
   Trash2,
   Moon,
   Sun,
+  MoreVertical,
+  X,
 } from 'lucide-react-native';
 import { useVaultStore } from '../../utils/vaultStore';
 import { useTheme } from '../../theme/ThemeContext';
@@ -27,7 +31,7 @@ interface Props {
 }
 
 export const AppHeader: React.FC<Props> = ({ onOpenExport, isTablet }) => {
-  const { theme, toggleTheme, themeMode } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const {
     notes,
     activeNoteId,
@@ -39,14 +43,16 @@ export const AppHeader: React.FC<Props> = ({ onOpenExport, isTablet }) => {
     deleteNote,
   } = useVaultStore();
 
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const activeNote = notes.find((n) => n.id === activeNoteId);
 
-  // Calculate word count and character count
   const wordCount = activeNote
     ? activeNote.content.trim().split(/\s+/).filter(Boolean).length
     : 0;
 
   const handleDelete = () => {
+    setIsMenuOpen(false);
     if (!activeNote) return;
     Alert.alert(
       'Delete Note',
@@ -60,6 +66,21 @@ export const AppHeader: React.FC<Props> = ({ onOpenExport, isTablet }) => {
         },
       ]
     );
+  };
+
+  const handleTogglePin = () => {
+    if (activeNote) togglePinNote(activeNote.id);
+    setIsMenuOpen(false);
+  };
+
+  const handleOpenExport = () => {
+    setIsMenuOpen(false);
+    onOpenExport();
+  };
+
+  const handleToggleTheme = () => {
+    toggleTheme();
+    setIsMenuOpen(false);
   };
 
   return (
@@ -105,7 +126,7 @@ export const AppHeader: React.FC<Props> = ({ onOpenExport, isTablet }) => {
         )}
       </View>
 
-      {/* Middle section: View Mode Switcher (Edit | Split | Preview) */}
+      {/* Middle section: View Mode Switcher */}
       <View
         style={[
           styles.viewModeContainer,
@@ -119,26 +140,29 @@ export const AppHeader: React.FC<Props> = ({ onOpenExport, isTablet }) => {
           onPress={() => setViewMode('edit')}
           style={[
             styles.modeButton,
+            !isTablet && styles.modeButtonCompact,
             viewMode === 'edit' && {
               backgroundColor: theme.accentSoft,
             },
           ]}
         >
           <Edit3
-            size={15}
+            size={16}
             color={viewMode === 'edit' ? theme.accent : theme.textMuted}
           />
-          <Text
-            style={[
-              styles.modeButtonText,
-              {
-                color: viewMode === 'edit' ? theme.accent : theme.textMuted,
-                fontWeight: viewMode === 'edit' ? '700' : '500',
-              },
-            ]}
-          >
-            Edit
-          </Text>
+          {isTablet && (
+            <Text
+              style={[
+                styles.modeButtonText,
+                {
+                  color: viewMode === 'edit' ? theme.accent : theme.textMuted,
+                  fontWeight: viewMode === 'edit' ? '700' : '500',
+                },
+              ]}
+            >
+              Edit
+            </Text>
+          )}
         </TouchableOpacity>
 
         {isTablet && (
@@ -152,7 +176,7 @@ export const AppHeader: React.FC<Props> = ({ onOpenExport, isTablet }) => {
             ]}
           >
             <Columns
-              size={15}
+              size={16}
               color={viewMode === 'split' ? theme.accent : theme.textMuted}
             />
             <Text
@@ -173,62 +197,204 @@ export const AppHeader: React.FC<Props> = ({ onOpenExport, isTablet }) => {
           onPress={() => setViewMode('preview')}
           style={[
             styles.modeButton,
+            !isTablet && styles.modeButtonCompact,
             viewMode === 'preview' && {
               backgroundColor: theme.accentSoft,
             },
           ]}
         >
           <Eye
-            size={15}
+            size={16}
             color={viewMode === 'preview' ? theme.accent : theme.textMuted}
           />
-          <Text
-            style={[
-              styles.modeButtonText,
-              {
-                color: viewMode === 'preview' ? theme.accent : theme.textMuted,
-                fontWeight: viewMode === 'preview' ? '700' : '500',
-              },
-            ]}
-          >
-            Read
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Right section: Actions */}
-      <View style={styles.rightSection}>
-        {activeNote && (
-          <>
-            <TouchableOpacity
-              onPress={() => togglePinNote(activeNote.id)}
-              style={styles.iconButton}
+          {isTablet && (
+            <Text
+              style={[
+                styles.modeButtonText,
+                {
+                  color: viewMode === 'preview' ? theme.accent : theme.textMuted,
+                  fontWeight: viewMode === 'preview' ? '700' : '500',
+                },
+              ]}
             >
-              <Pin
-                size={18}
-                color={activeNote.isPinned ? theme.accent : theme.textMuted}
-                fill={activeNote.isPinned ? theme.accent : 'none'}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={onOpenExport} style={styles.iconButton}>
-              <Share2 size={18} color={theme.textSecondary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={handleDelete} style={styles.iconButton}>
-              <Trash2 size={18} color={theme.danger} />
-            </TouchableOpacity>
-          </>
-        )}
-
-        <TouchableOpacity onPress={toggleTheme} style={styles.iconButton}>
-          {theme.isDark ? (
-            <Sun size={18} color={theme.warning} />
-          ) : (
-            <Moon size={18} color={theme.textSecondary} />
+              Read
+            </Text>
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Right section: Tablet (Direct icons) vs Mobile (Three Dots menu) */}
+      {isTablet ? (
+        <View style={styles.rightSection}>
+          {activeNote && (
+            <>
+              <TouchableOpacity
+                onPress={() => togglePinNote(activeNote.id)}
+                style={styles.iconButton}
+              >
+                <Pin
+                  size={18}
+                  color={activeNote.isPinned ? theme.accent : theme.textMuted}
+                  fill={activeNote.isPinned ? theme.accent : 'none'}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={onOpenExport} style={styles.iconButton}>
+                <Share2 size={18} color={theme.textSecondary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={handleDelete} style={styles.iconButton}>
+                <Trash2 size={18} color={theme.danger} />
+              </TouchableOpacity>
+            </>
+          )}
+
+          <TouchableOpacity onPress={toggleTheme} style={styles.iconButton}>
+            {theme.isDark ? (
+              <Sun size={18} color={theme.warning} />
+            ) : (
+              <Moon size={18} color={theme.textSecondary} />
+            )}
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.rightSectionCompact}>
+          <TouchableOpacity
+            onPress={() => setIsMenuOpen(true)}
+            style={styles.iconButton}
+          >
+            <MoreVertical size={20} color={theme.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Mobile Overflow Actions Modal */}
+      {!isTablet && (
+        <Modal
+          visible={isMenuOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsMenuOpen(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setIsMenuOpen(false)}>
+            <View style={styles.menuOverlay}>
+              <TouchableWithoutFeedback>
+                <View
+                  style={[
+                    styles.menuCard,
+                    {
+                      backgroundColor: theme.cardBg,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                >
+                  <View style={styles.menuHeader}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.menuTitle, { color: theme.text }]}
+                    >
+                      {activeNote?.title || 'Note Actions'}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setIsMenuOpen(false)}
+                      style={styles.menuCloseBtn}
+                    >
+                      <X size={18} color={theme.textMuted} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.menuList}>
+                    {activeNote && (
+                      <TouchableOpacity
+                        onPress={handleTogglePin}
+                        style={[
+                          styles.menuItem,
+                          { borderBottomColor: theme.borderSubtle },
+                        ]}
+                      >
+                        <Pin
+                          size={18}
+                          color={activeNote.isPinned ? theme.accent : theme.text}
+                          fill={activeNote.isPinned ? theme.accent : 'none'}
+                          style={styles.menuItemIcon}
+                        />
+                        <Text style={[styles.menuItemText, { color: theme.text }]}>
+                          {activeNote.isPinned ? 'Unpin Note' : 'Pin Note'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {activeNote && (
+                      <TouchableOpacity
+                        onPress={handleOpenExport}
+                        style={[
+                          styles.menuItem,
+                          { borderBottomColor: theme.borderSubtle },
+                        ]}
+                      >
+                        <Share2
+                          size={18}
+                          color={theme.text}
+                          style={styles.menuItemIcon}
+                        />
+                        <Text style={[styles.menuItemText, { color: theme.text }]}>
+                          Export & Share Note
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity
+                      onPress={handleToggleTheme}
+                      style={[
+                        styles.menuItem,
+                        { borderBottomColor: theme.borderSubtle },
+                      ]}
+                    >
+                      {theme.isDark ? (
+                        <Sun
+                          size={18}
+                          color={theme.warning}
+                          style={styles.menuItemIcon}
+                        />
+                      ) : (
+                        <Moon
+                          size={18}
+                          color={theme.text}
+                          style={styles.menuItemIcon}
+                        />
+                      )}
+                      <Text style={[styles.menuItemText, { color: theme.text }]}>
+                        {theme.isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {activeNote && (
+                      <TouchableOpacity
+                        onPress={handleDelete}
+                        style={styles.menuItem}
+                      >
+                        <Trash2
+                          size={18}
+                          color={theme.danger}
+                          style={styles.menuItemIcon}
+                        />
+                        <Text
+                          style={[
+                            styles.menuItemText,
+                            { color: theme.danger, fontWeight: '600' },
+                          ]}
+                        >
+                          Delete Note
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      )}
     </View>
   );
 };
@@ -246,18 +412,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 8,
   },
   titleWrapper: {
     marginLeft: 10,
-    flexShrink: 1,
+    flex: 1,
   },
   noteTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   wordCount: {
     fontSize: 11,
+    marginTop: 1,
   },
   viewModeContainer: {
     flexDirection: 'row',
@@ -265,7 +433,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     padding: 2,
-    marginHorizontal: 8,
+    marginRight: 6,
   },
   modeButton: {
     flexDirection: 'row',
@@ -273,6 +441,10 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 9,
     borderRadius: 6,
+  },
+  modeButtonCompact: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   modeButtonText: {
     fontSize: 12,
@@ -283,11 +455,66 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
+  rightSectionCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   iconButton: {
     width: 34,
     height: 34,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 60,
+    paddingRight: 14,
+  },
+  menuCard: {
+    width: 220,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  menuTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    flex: 1,
+  },
+  menuCloseBtn: {
+    padding: 2,
+  },
+  menuList: {
+    paddingVertical: 2,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  menuItemIcon: {
+    marginRight: 10,
+  },
+  menuItemText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
