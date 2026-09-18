@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { CheckSquare, Square } from 'lucide-react-native';
 import { useTheme } from '../../theme/ThemeContext';
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
+  const { height } = useWindowDimensions();
   const { theme } = useTheme();
   const { notes, activeNoteId, toggleChecklistInActiveNote } = useVaultStore();
 
@@ -293,11 +295,14 @@ export const MarkdownViewer: React.FC<Props> = ({ isTablet }) => {
     }
   };
 
+  const overscrollBottomPadding = Math.max(height * 0.55, 350);
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={[
         styles.scrollContent,
+        { paddingBottom: overscrollBottomPadding },
         isTablet && styles.tabletScrollContent,
       ]}
       showsVerticalScrollIndicator={false}
@@ -315,12 +320,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 80,
   },
   tabletScrollContent: {
     paddingHorizontal: 40,
     paddingTop: 24,
-    paddingBottom: 100,
     alignSelf: 'center',
     width: '100%',
     maxWidth: 820,

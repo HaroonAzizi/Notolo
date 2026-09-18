@@ -8,6 +8,8 @@ import {
   KeyboardAvoidingView,
   NativeSyntheticEvent,
   TextInputSelectionChangeEventData,
+  useWindowDimensions,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { useVaultStore } from '../../utils/vaultStore';
@@ -29,6 +31,7 @@ interface Props {
 }
 
 export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
+  const { height } = useWindowDimensions();
   const { theme } = useTheme();
   const { notes, activeNoteId, updateActiveNoteContent } = useVaultStore();
 
@@ -86,9 +89,6 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
     selectionRef.current = e.nativeEvent.selection;
   };
 
-  // Text change handler:
-  // - Handles smart list continuation when Enter is pressed
-  // - Does NOT force setNativeProps on standard typing/autocorrect (prevents unwanted highlighting)
   const handleChangeText = (newText: string) => {
     // Check if the user pressed Enter (newline added at cursor position)
     if (newText.length === content.length + 1) {
@@ -106,17 +106,21 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
     pushHistory(newText);
   };
 
-  // Toolbar actions: only explicitly set cursor when user taps a formatting tool
   const applyChange = (result: { newText: string; newSelection: EditorSelection }) => {
     pushHistory(result.newText);
     selectionRef.current = result.newSelection;
-    // Set selection for toolbar action
     setTimeout(() => {
       inputRef.current?.focus();
       inputRef.current?.setNativeProps({
         selection: result.newSelection,
       });
     }, 15);
+  };
+
+  const handleCanvasPress = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
   const toolbarActions: ToolbarActions = {
@@ -142,12 +146,15 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
     canRedo: historyIndex < history.length - 1,
   };
 
+  // Generous bottom clearance allows infinite scrolling past the bottom of text
+  const overscrollBottomPadding = Math.max(height * 0.65, 450);
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Top Google Docs Formatting Toolbar Ribbon */}
       <GoogleDocsToolbar actions={toolbarActions} />
 
-      {/* Seamless Edge-to-Edge Document Canvas */}
+      {/* Seamless Edge-to-Edge Document Canvas with Infinite Scroll */}
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -156,33 +163,39 @@ export const SmartEditor: React.FC<Props> = ({ isTablet }) => {
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
+            { paddingBottom: overscrollBottomPadding },
             isTablet && styles.tabletScrollContent,
           ]}
           showsVerticalScrollIndicator={false}
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
         >
-          <TextInput
-            ref={inputRef}
-            multiline
-            value={content}
-            onChangeText={handleChangeText}
-            onSelectionChange={handleSelectionChange}
-            placeholder="Start typing your thoughts..."
-            placeholderTextColor={theme.textMuted}
-            selectionColor={theme.accent}
-            textAlignVertical="top"
-            scrollEnabled={false}
-            autoCapitalize="sentences"
-            autoCorrect={true}
-            style={[
-              styles.input,
-              {
-                color: theme.text,
-                fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'sans-serif',
-              },
-            ]}
-          />
+          <TouchableWithoutFeedback onPress={handleCanvasPress}>
+            <View style={styles.editorArea}>
+              <TextInput
+                ref={inputRef}
+                multiline
+                value={content}
+                onChangeText={handleChangeText}
+                onSelectionChange={handleSelectionChange}
+                placeholder="Start typing your thoughts..."
+                placeholderTextColor={theme.textMuted}
+                selectionColor={theme.accent}
+                textAlignVertical="top"
+                scrollEnabled={false}
+                autoCapitalize="sentences"
+                autoCorrect={true}
+                style={[
+                  styles.input,
+                  {
+                    color: theme.text,
+                    fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'sans-serif',
+                    minHeight: Math.max(height * 0.45, 300),
+                  },
+                ]}
+              />
+            </View>
+          </TouchableWithoutFeedback>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -200,20 +213,21 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 80,
   },
   tabletScrollContent: {
     paddingHorizontal: 40,
     paddingTop: 24,
-    paddingBottom: 100,
     alignSelf: 'center',
     width: '100%',
     maxWidth: 820,
+  },
+  editorArea: {
+    flex: 1,
+    minHeight: '100%',
   },
   input: {
     fontSize: 16,
     lineHeight: 26,
     padding: 0,
-    minHeight: 600,
   },
 });
