@@ -9,19 +9,19 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0B0D10"
+      "backgroundColor": "#071015"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "af.code.notolo",
-      "backgroundColor": "#0B0D10",
+      "backgroundColor": "#071015",
       "infoPlist": {
         "UIRequiresFullScreen": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0B0D10",
+        "backgroundColor": "#071015",
         "foregroundImage": "./assets/icon.png"
       },
       "predictiveBackGestureEnabled": false
@@ -31,6 +31,12 @@
     },
     "plugins": [
       "expo-sharing"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a31f0308-4bd5-4006-a406-670cc4f35ad1"
+      }
+    },
+    "owner": "haroonazizi"
   }
 }
