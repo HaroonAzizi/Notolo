@@ -16,7 +16,8 @@
       "bundleIdentifier": "af.code.notolo",
       "backgroundColor": "#071015",
       "infoPlist": {
-        "UIRequiresFullScreen": false
+        "UIRequiresFullScreen": false,
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
